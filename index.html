@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Omnipresent AI Summoning Hub</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0f19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1f2937;
+            border-radius: 2px;
+        }
+        .pulse-active {
+            animation: pulse-ring 2s infinite ease-in-out;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.4; }
+            50% { transform: scale(1.08); opacity: 0.7; }
+            100% { transform: scale(0.95); opacity: 0.4; }
+        }
+        .drawer-transition {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col font-sans selection:bg-purple-600 selection:text-white overflow-x-hidden relative">
+
+    <!-- Persistent Floating "On-Command" Summoner Widget -->
+    <button id="floating-command-trigger" class="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-purple-600 hover:bg-purple-500 active:scale-95 text-white flex items-center justify-center shadow-2xl shadow-purple-500/30 transition-transform border border-purple-400/30" title="Tap to summon Aether">
+        <div class="absolute inset-0 rounded-full bg-purple-600/30 pulse-active"></div>
+        <i class="fa-solid fa-wand-magic-sparkles text-xl relative z-10"></i>
+    </button>
+
+    <!-- Top Navigation Bar -->
+    <header class="border-b border-gray-800 bg-gray-900/90 backdrop-blur-md sticky top-0 z-40 px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center space-x-2.5">
+            <div class="bg-purple-600 text-white p-2 rounded-lg flex items-center justify-center shadow-lg shadow-purple-900/20">
+                <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-sm font-bold tracking-tight">Aether Summoner</h1>
+                <p class="text-[10px] text-gray-400">Dynamic Verbosity Engine Active</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center space-x-2">
+            <!-- Mobile Toggle Settings Button -->
+            <button id="toggle-drawer-btn" class="p-2 bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-lg text-gray-300 flex items-center justify-center focus:outline-none" style="min-width: 40px; min-height: 40px;">
+                <i class="fa-solid fa-sliders text-sm"></i>
+            </button>
+            
+            <span id="active-engine-badge" class="flex items-center space-x-1.5 text-[10px] bg-purple-950/45 text-purple-300 px-2.5 py-1 rounded-full border border-purple-800/60">
+                <span class="h-1.5 w-1.5 rounded-full bg-purple-500 inline-block animate-pulse"></span>
+                <span id="active-engine-label">Gemini</span>
+            </span>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="flex-1 flex flex-col md:flex-row relative">
+
+        <!-- Mobile Drawer Backdrop -->
+        <div id="drawer-backdrop" class="hidden fixed inset-0 bg-black/60 z-40 backdrop-blur-sm"></div>
+
+        <!-- Left Column / Settings Panel -->
+        <aside id="settings-drawer" class="fixed inset-y-0 left-0 w-80 bg-gray-900/98 border-r border-gray-800 p-5 z-50 transform -translate-x-full md:translate-x-0 md:static md:w-80 drawer-transition flex flex-col justify-between shadow-2xl md:shadow-none">
+            <div class="space-y-6 overflow-y-auto max-h-[85vh] pr-1">
+                <!-- Drawer Header for Mobile -->
+                <div class="flex items-center justify-between md:hidden pb-2 border-b border-gray-800">
+                    <span class="text-xs font-bold uppercase tracking-wider text-purple-400">Gateway Controls</span>
+                    <button id="close-drawer-btn" class="p-2 text-gray-400 hover:text-gray-200" style="min-width: 40px; min-height: 40px;">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <!-- API Configuration Console -->
+                <div class="space-y-4">
+                    <h2 class="text-sm font-semibold text-purple-400 flex items-center">
+                        <i class="fa-solid fa-key mr-2"></i> API Configuration
+                    </h2>
+                    <div class="space-y-3">
+                        <!-- Engine Selection -->
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Active Pipeline</label>
+                            <select id="engine-selector" class="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2.5 text-xs text-gray-300 focus:outline-none focus:border-purple-600" style="min-height: 44px;">
+                                <option value="gemini">Gemini 2.5 Flash (Recommended)</option>
+                                <option value="openai">OpenAI GPT-4o Integration</option>
+                            </select>
+                        </div>
+
+                        <!-- Gemini Key Input Area -->
+                        <div id="gemini-key-container">
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Gemini API Key</label>
+                            <div class="relative flex items-center">
+                                <input id="user-gemini-key" type="password" placeholder="AIzaSy... (Auto-saved)" class="w-full bg-gray-950 border border-gray-800 rounded-lg pl-3 pr-10 py-2 text-xs font-mono text-gray-300 focus:outline-none focus:border-purple-600" style="min-height: 44px;">
+                                <button id="toggle-gemini-key-visibility" type="button" class="absolute right-3 text-gray-500 hover:text-gray-300" style="min-width: 36px; min-height: 36px;">
+                                    <i class="fa-regular fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- OpenAI Input Area -->
+                        <div id="openai-key-container" class="hidden">
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">OpenAI API Key</label>
+                            <div class="relative flex items-center">
+                                <input id="user-openai-key" type="password" placeholder="sk-proj-... (Auto-saved)" class="w-full bg-gray-950 border border-gray-800 rounded-lg pl-3 pr-10 py-2 text-xs font-mono text-gray-300 focus:outline-none focus:border-purple-600" style="min-height: 44px;">
+                                <button id="toggle-key-visibility" type="button" class="absolute right-3 text-gray-500 hover:text-gray-300" style="min-width: 36px; min-height: 36px;">
+                                    <i class="fa-regular fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Memory Core Management Panel -->
+                <div class="space-y-4">
+                    <h2 class="text-sm font-semibold text-purple-400 flex items-center">
+                        <i class="fa-solid fa-database mr-2"></i> Memory Vault Controls
+                    </h2>
+                    <div class="bg-gray-950/60 p-4 rounded-xl border border-gray-800 space-y-3">
+                        <div class="flex items-center justify-between text-xs font-mono text-gray-400">
+                            <span>Saved turns:</span>
+                            <span id="memory-count-label" class="text-purple-400 font-bold">0</span>
+                        </div>
+                        <div class="text-[11px] text-gray-400 leading-relaxed">
+                            Aether is saving all conversations directly to your device storage. It refers to your previous remarks to form a continuous mental path.
+                        </div>
+                        <button id="wipe-memory-btn" class="w-full py-2 bg-red-950/30 hover:bg-red-900/30 text-red-400 border border-red-900/40 rounded-lg text-xs font-semibold flex items-center justify-center transition" style="min-height: 38px;">
+                            <i class="fa-solid fa-trash-can mr-2"></i> Wipe Vault Memory
+                        </button>
+                    </div>
+                </div>
+
+                <!-- On-Command Configurations -->
+                <div class="space-y-4">
+                    <h2 class="text-sm font-semibold text-purple-400 flex items-center">
+                        <i class="fa-solid fa-microphone mr-2"></i> Voice Commands
+                    </h2>
+                    <div class="bg-gray-950/60 p-4 rounded-xl border border-gray-800 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-bold text-gray-300">Voice Activation</span>
+                            <button id="voice-activation-toggle" class="px-2.5 py-1 text-[10px] rounded bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700 hover:text-white transition">
+                                <i class="fa-solid fa-microphone-slash mr-1"></i> Disabled
+                            </button>
+                        </div>
+                        <p class="text-[11px] text-gray-400 leading-normal">
+                            Wake words: <strong class="text-purple-300">"Aether"</strong> or <strong class="text-purple-300">"Summon"</strong>.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Custom Personality Mode -->
+                <div class="space-y-4">
+                    <h2 class="text-sm font-semibold text-purple-400 flex items-center">
+                        <i class="fa-solid fa-brain mr-2"></i> Cognitive Attitude
+                    </h2>
+                    <div class="bg-gray-950/60 p-4 rounded-xl border border-gray-800 space-y-2">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Opinion Setting</label>
+                        <select id="attitude-selector" class="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-xs text-gray-300 focus:outline-none focus:border-purple-600" style="min-height: 40px;">
+                            <option value="sassy">Unfiltered & Opinionated (Deep Sass)</option>
+                            <option value="critical">The Critical Analyst (Brutally Honest)</option>
+                            <option value="rebel">Creative Rebel (Disruptive Thinking)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Global Keyboard Bindings Guide -->
+            <div class="pt-4 border-t border-gray-800 hidden md:block">
+                <span class="text-[10px] uppercase font-mono text-gray-500">Shortcut Listener Daemon</span>
+                <p class="text-[11px] text-gray-400 mt-1">
+                    Press <kbd class="px-1.5 py-0.5 bg-gray-800 rounded text-gray-300 font-mono font-bold text-[10px]">Alt</kbd> + <kbd class="px-1.5 py-0.5 bg-gray-800 rounded text-gray-300 font-mono font-bold text-[10px]">Space</kbd> to summon focus.
+                </p>
+            </div>
+        </aside>
+
+        <!-- Right Column / Workspace & Chat Terminal -->
+        <main class="flex-1 flex flex-col p-4 md:p-6 min-w-0">
+            
+            <!-- Terminal Container Viewport -->
+            <div class="bg-gray-900 border border-gray-800 rounded-2xl flex-1 flex flex-col relative overflow-hidden shadow-2xl">
+                
+                <!-- Desktop Active Header Decorator -->
+                <div class="flex items-center justify-between border-b border-gray-800 px-4 py-3 bg-gray-900/60 backdrop-blur-sm">
+                    <div class="flex items-center space-x-2">
+                        <div class="h-2.5 w-2.5 rounded-full bg-red-500/80"></div>
+                        <div class="h-2.5 w-2.5 rounded-full bg-yellow-500/80"></div>
+                        <div class="h-2.5 w-2.5 rounded-full bg-green-500/80"></div>
+                        <span class="text-[11px] text-gray-400 font-mono ml-2 truncate">aether://mobile-viewport</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span id="voice-indicator-dot" class="hidden h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
+                        <span id="voice-indicator-label" class="text-[10px] text-gray-500 font-mono">Voice Idle</span>
+                    </div>
+                </div>
+
+                <!-- Desktop Active State (Chat Screen) -->
+                <div id="desktop-viewport" class="flex-1 p-4 relative flex flex-col justify-between overflow-y-auto min-h-[400px]">
+                    
+                    <!-- Chat stream area -->
+                    <div id="chat-stream" class="flex-1 overflow-y-auto space-y-4 text-xs pr-1 mb-4">
+                        <!-- Messages dynamically render here -->
+                    </div>
+
+                    <!-- Vision Upload Preview Thumbnail -->
+                    <div id="screen-preview-container" class="hidden border border-purple-850 bg-purple-950/20 rounded-xl p-3 mb-3 flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="relative w-14 h-14 bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+                                <img id="screen-thumbnail" class="w-full h-full object-cover" src="" alt="Screen Preview">
+                            </div>
+                            <div>
+                                <p class="text-xs font-semibold text-purple-300">Staged Screen Capture</p>
+                                <p class="text-[10px] text-gray-400 font-mono max-w-[150px] truncate" id="preview-image-name">screenshot.png</p>
+                            </div>
+                        </div>
+                        <button id="clear-screen-btn" class="text-red-400 hover:text-red-300 text-xs py-2 px-3 bg-red-950/30 hover:bg-red-900/20 rounded-lg border border-red-900/30 flex items-center justify-center font-medium" style="min-height: 40px;">
+                            <i class="fa-solid fa-trash-can mr-1.5"></i> Discard
+                        </button>
+                    </div>
+
+                    <!-- Input Console Panel -->
+                    <div class="space-y-3">
+                        <!-- Quick Mobile Trigger Actions -->
+                        <div class="flex items-center space-x-2">
+                            <input type="file" id="fallback-file-input" accept="image/*" class="hidden">
+                            <button id="capture-screen-btn" type="button" class="flex-1 py-3 px-4 bg-purple-900/40 hover:bg-purple-900/60 active:bg-purple-900/80 text-purple-200 rounded-xl border border-purple-800/50 text-xs font-semibold tracking-wide transition flex items-center justify-center space-x-2 shadow-lg shadow-purple-950/40" style="min-height: 48px;">
+                                <i class="fa-solid fa-camera text-sm"></i>
+                                <span>Upload Screen Screenshot</span>
+                            </button>
+                        </div>
+
+                        <!-- Chat Console Form -->
+                        <form id="console-form" class="flex items-center space-x-2 bg-gray-950 border border-gray-800/80 rounded-xl p-1.5 focus-within:border-purple-600 transition shadow-inner">
+                            <input id="console-input" type="text" placeholder="Tell me what to analyze..." autocomplete="off" class="flex-1 bg-transparent border-0 outline-none focus:ring-0 text-xs px-3 py-3 text-gray-200 placeholder-gray-500" style="min-height: 44px;">
+                            <button type="submit" class="bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white px-4 py-3 rounded-lg text-xs font-bold flex items-center justify-center transition shadow-lg shadow-purple-900/20" style="min-width: 64px; min-height: 44px;">
+                                <span>SEND</span> <i class="fa-solid fa-paper-plane ml-1.5 text-[10px]"></i>
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </main>
+    </div>
+
+    <!-- UI Interaction & Persistent Memory Scripts -->
+    <script>
+        let isSummoned = false;
+        let stagedBase64Image = null;
+        let recognition = null;
+        let isListening = false;
+        
+        // Chat History Store (Loaded dynamically from LocalStorage)
+        let chatHistory = [];
+
+        // DOM Element Cache
+        const settingsDrawer = document.getElementById('settings-drawer');
+        const drawerBackdrop = document.getElementById('drawer-backdrop');
+        const toggleDrawerBtn = document.getElementById('toggle-drawer-btn');
+        const closeDrawerBtn = document.getElementById('close-drawer-btn');
+
+        const consoleForm = document.getElementById('console-form');
+        const consoleInput = document.getElementById('console-input');
+        const chatStream = document.getElementById('chat-stream');
+        const attitudeSelector = document.getElementById('attitude-selector');
+        const wipeMemoryBtn = document.getElementById('wipe-memory-btn');
+        const memoryCountLabel = document.getElementById('memory-count-label');
+
+        // Dynamic Engine Selectors
+        const engineSelector = document.getElementById('engine-selector');
+        const geminiKeyContainer = document.getElementById('gemini-key-container');
+        const userGeminiKeyInput = document.getElementById('user-gemini-key');
+        const toggleGeminiKeyVisibility = document.getElementById('toggle-gemini-key-visibility');
+
+        const openaiKeyContainer = document.getElementById('openai-key-container');
+        const userOpenaiKeyInput = document.getElementById('user-openai-key');
+        const toggleKeyVisibility = document.getElementById('toggle-key-visibility');
+        const activeEngineBadge = document.getElementById('active-engine-badge');
+        const activeEngineLabel = document.getElementById('active-engine-label');
+
+        // Screen Capture UI Elements
+        const captureScreenBtn = document.getElementById('capture-screen-btn');
+        const fallbackFileInput = document.getElementById('fallback-file-input');
+        const screenPreviewContainer = document.getElementById('screen-preview-container');
+        const screenThumbnail = document.getElementById('screen-thumbnail');
+        const previewImageName = document.getElementById('preview-image-name');
+        const clearScreenBtn = document.getElementById('clear-screen-btn');
+
+        // On-Command Trigger Elements
+        const floatingCommandTrigger = document.getElementById('floating-command-trigger');
+        const voiceActivationToggle = document.getElementById('voice-activation-toggle');
+        const voiceIndicatorDot = document.getElementById('voice-indicator-dot');
+        const voiceIndicatorLabel = document.getElementById('voice-indicator-label');
+
+        // --- LIFECYCLE: PERSISTENT MEMORY LOADER & POPULATOR ---
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedGeminiKey = localStorage.getItem('AETHER_GEMINI_KEY')
